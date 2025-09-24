@@ -1,0 +1,26 @@
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using PRN232.Lab1.CoffeeStore.Services.Interfaces;
+using PRN232.Lab1.CoffeeStore.Services.Interfaces.Services;
+using PRN232.Lab1.CoffeeStore.Services.Models;
+using PRN232.Lab1.CoffeeStore.Services.Services;
+using VNPAY.NET;
+
+namespace PRN232.Lab1.CoffeeStore.Services;
+
+public static class DependencyInjection
+{
+    public static void AddBusinessServices(this IServiceCollection services, IConfiguration configuration)
+    {
+        // Configure JWT Settings
+        services.Configure<JwtSettings>(configuration.GetSection("JwtSettings"));
+        
+        services.AddScoped<IVnpay, Vnpay>();
+        services.AddScoped<IProductService, ProductService>();
+        services.AddScoped<IMenuService, MenuService>();
+        services.AddScoped<IOrderService, OrderService>();
+        services.AddScoped<IVnPayService, VnPayService>();
+        services.AddScoped<ITokenService, TokenService>();
+        services.AddScoped<IAuthService, AuthService>();
+    }
+}
