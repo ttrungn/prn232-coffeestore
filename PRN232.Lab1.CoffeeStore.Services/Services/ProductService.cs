@@ -21,7 +21,7 @@ public class ProductService : IProductService
         _unitOfWork = unitOfWork;
     }
 
-    public async Task<DataServiceResponse<PaginationResponse<ProductResponse>>> GetProducts(GetProductsRequest request)
+    public async Task<DataServiceResponse<PaginationServiceResponse<ProductResponse>>> GetProducts(GetProductsRequest request)
     {
         var productRepository = _unitOfWork.GetRepository<Product, Guid>();
         var query = productRepository.Query()
@@ -40,15 +40,16 @@ public class ProductService : IProductService
             .Select(p => p.ToProductResponse())
             .ToListAsync();
 
-        var paginationResponse = new PaginationResponse<ProductResponse>()
+        var paginationResponse = new PaginationServiceResponse<ProductResponse>()
         {
             TotalResults = totalProducts,
             TotalCurrentResults = productResponses.Count,
             Page = request.Page,
+            PageSize = request.PageSize,
             Results = productResponses
         };
         
-        return new DataServiceResponse<PaginationResponse<ProductResponse>>()
+        return new DataServiceResponse<PaginationServiceResponse<ProductResponse>>()
         {
             Success = true,
             Message = "Get products successfully",

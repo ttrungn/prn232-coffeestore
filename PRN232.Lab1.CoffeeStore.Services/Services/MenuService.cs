@@ -17,7 +17,7 @@ public class MenuService : IMenuService
         _unitOfWork = unitOfWork;
     }
 
-    public async Task<DataServiceResponse<PaginationResponse<MenuResponse>>> GetMenus(GetMenusRequest request)
+    public async Task<DataServiceResponse<PaginationServiceResponse<MenuResponse>>> GetMenus(GetMenusRequest request)
     {
         var menuRepository = _unitOfWork.GetRepository<Menu, Guid>();
         var query = menuRepository.Query()
@@ -46,15 +46,16 @@ public class MenuService : IMenuService
             .Select(m => m.ToMenuResponse())
             .ToListAsync();
 
-        var paginationResponse = new PaginationResponse<MenuResponse>()
+        var paginationResponse = new PaginationServiceResponse<MenuResponse>()
         {
             TotalResults = totalMenus,
             TotalCurrentResults = menuResponses.Count,
             Page = request.Page,
+            PageSize = request.PageSize,
             Results = menuResponses
         };
 
-        return new DataServiceResponse<PaginationResponse<MenuResponse>>()
+        return new DataServiceResponse<PaginationServiceResponse<MenuResponse>>()
         {
             Success = true,
             Message = "Get menus successfully",

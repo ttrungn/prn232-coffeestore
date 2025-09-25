@@ -28,7 +28,7 @@ public class ProductsController : ControllerBase
     public async Task<IActionResult> GetProductsAsync([FromQuery] GetProductsRequest request)
     {
         var serviceResponse = await _productService.GetProducts(request);
-        return Ok(serviceResponse.ToDataApiResponse());
+        return Ok(serviceResponse.ToDataApiResponse(Request, Response));
     }
     
     /// <summary>

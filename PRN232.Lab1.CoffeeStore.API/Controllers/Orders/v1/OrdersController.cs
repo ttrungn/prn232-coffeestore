@@ -32,8 +32,8 @@ public class OrdersController : ControllerBase
     public async Task<IActionResult> GetOrdersAsync([FromQuery] GetOrdersRequest request)
     {
         var serviceResponse = await _orderService.GetOrders(request);
-        
-        return Ok(serviceResponse.ToDataApiResponse());
+
+        return Ok(serviceResponse.ToDataApiResponse(Request, Response));
     }
 
     /// <summary>

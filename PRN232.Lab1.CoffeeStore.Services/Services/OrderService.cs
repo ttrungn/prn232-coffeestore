@@ -18,7 +18,7 @@ public class OrderService : IOrderService
         _unitOfWork = unitOfWork;
     }
 
-    public async Task<DataServiceResponse<PaginationResponse<OrderResponse>>> GetOrders(GetOrdersRequest request)
+    public async Task<DataServiceResponse<PaginationServiceResponse<OrderResponse>>> GetOrders(GetOrdersRequest request)
     {
         var orderRepository = _unitOfWork.GetRepository<Order, Guid>();
         var query = orderRepository.Query()
@@ -50,15 +50,16 @@ public class OrderService : IOrderService
             .Select(o => o.ToOrderResponse())
             .ToListAsync();
 
-        var paginationResponse = new PaginationResponse<OrderResponse>()
+        var paginationResponse = new PaginationServiceResponse<OrderResponse>()
         {
             TotalResults = totalOrders,
             TotalCurrentResults = orderResponses.Count,
             Page = request.Page,
+            PageSize = request.PageSize,
             Results = orderResponses
         };
 
-        return new DataServiceResponse<PaginationResponse<OrderResponse>>()
+        return new DataServiceResponse<PaginationServiceResponse<OrderResponse>>()
         {
             Success = true,
             Message = "Get orders successfully",

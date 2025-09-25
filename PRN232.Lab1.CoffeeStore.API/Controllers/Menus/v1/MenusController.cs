@@ -29,7 +29,7 @@ public class MenusController : ControllerBase
     {
         var serviceResponse = await _menuService.GetMenus(request);
         
-        return Ok(serviceResponse.ToDataApiResponse());
+        return Ok(serviceResponse.ToDataApiResponse(Request, Response));
     }
     
     /// <summary>
