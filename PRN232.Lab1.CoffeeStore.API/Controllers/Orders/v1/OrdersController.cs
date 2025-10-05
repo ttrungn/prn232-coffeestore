@@ -40,7 +40,7 @@ public class OrdersController : ControllerBase
     /// Get detailed information about a specific order including items and payment details
     /// </summary>
     /// <param name="orderId">The unique identifier of the order</param>
-    /// <param name="request">Base service request parameters</param>
+    /// <param name="request">Base service requestV2 parameters</param>
     /// <returns>Complete order details with items, payment information, and totals</returns>
     [MapToApiVersion(1)]
     [HttpGet("{orderId}")]

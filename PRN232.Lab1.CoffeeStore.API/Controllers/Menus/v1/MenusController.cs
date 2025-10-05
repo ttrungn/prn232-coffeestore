@@ -36,7 +36,7 @@ public class MenusController : ControllerBase
     /// Get a specific menu by its ID with associated products
     /// </summary>
     /// <param name="menuId">The unique identifier of the menu</param>
-    /// <param name="request">Base service request parameters</param>
+    /// <param name="request">Base service requestV2 parameters</param>
     /// <returns>Menu details with associated active products</returns>
     [MapToApiVersion(1)]
     [HttpGet("{menuId}")]

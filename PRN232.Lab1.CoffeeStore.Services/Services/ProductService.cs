@@ -192,26 +192,24 @@ public class ProductService : IProductService
         };
     }
 
-    public async Task<DataServiceResponse<PaginationServiceResponse<object?>>> GetProducts(ProductQueryRequest request)
+    public async Task<DataServiceResponse<PaginationServiceResponse<object?>>> GetProducts(GetProductsRequestV2 requestV2)
     {
         var productRepository = _unitOfWork.GetRepository<Product, Guid>();
         var query = productRepository.Query()
             .Include(p => p.Category)
-                .Where(p => p.Category != null && p.Category.IsActive)   
-
+                .Where(p => p.Category != null && p.Category.IsActive)
             .AsNoTracking();
 
         var config = new ParsingConfig { IsCaseSensitive = false };
-
-
+        
         var entityProps = typeof(Product).GetProperties()
             .Select(p => p.Name)
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
 
-        if (!string.IsNullOrEmpty(request.Sort))
+        if (!string.IsNullOrEmpty(requestV2.Sort))
         {
-            var sortFields = request.Sort.Split(',', StringSplitOptions.TrimEntries);
+            var sortFields = requestV2.Sort.Split(',', StringSplitOptions.TrimEntries);
 
             var invalidSorts = sortFields
                 .Select(sf => sf.StartsWith("-") ? sf[1..] : sf)
@@ -228,9 +226,9 @@ public class ProductService : IProductService
             }
         }
 
-        if (!string.IsNullOrEmpty(request.Select))
+        if (!string.IsNullOrEmpty(requestV2.Select))
         {
-            var selectFields = request.Select.Split(',', StringSplitOptions.TrimEntries);
+            var selectFields = requestV2.Select.Split(',', StringSplitOptions.TrimEntries);
 
             var invalidSelects = selectFields
                 .Where(sf => !entityProps.Contains(sf))
@@ -247,15 +245,15 @@ public class ProductService : IProductService
             }
         }
 
-        if (!string.IsNullOrWhiteSpace(request.Search))
+        if (!string.IsNullOrWhiteSpace(requestV2.Search))
         {
-            query = query.Where(p => p.Name.Contains(request.Search) ||
-                                     p.Description.Contains(request.Search));
+            query = query.Where(p => p.Name.Contains(requestV2.Search) ||
+                                     p.Description.Contains(requestV2.Search));
         }
 
-        if (!string.IsNullOrWhiteSpace(request.Sort))
+        if (!string.IsNullOrWhiteSpace(requestV2.Sort))
         {
-            var sortFields = request.Sort.Split(',', StringSplitOptions.TrimEntries);
+            var sortFields = requestV2.Sort.Split(',', StringSplitOptions.TrimEntries);
 
             var validSorts = sortFields.Select(f =>
             {
@@ -277,16 +275,16 @@ public class ProductService : IProductService
         }
 
         var totalCount = await query.CountAsync();
-        var skip = (request.Page - 1) * request.PageSize;
+        var skip = (requestV2.Page - 1) * requestV2.PageSize;
 
 
         object data;
 
-        if (!string.IsNullOrEmpty(request.Select))
+        if (!string.IsNullOrEmpty(requestV2.Select))
         {
-            var fields = request.Select.Split(',', StringSplitOptions.TrimEntries);
+            var fields = requestV2.Select.Split(',', StringSplitOptions.TrimEntries);
             var selector = "new(" + string.Join(",", fields) + ")";
-            data = await query.Skip(skip).Take(request.PageSize)
+            data = await query.Skip(skip).Take(requestV2.PageSize)
                 .Select(config, selector)
                 .ToDynamicListAsync();
         }
@@ -294,7 +292,7 @@ public class ProductService : IProductService
         {
             data = await query
                 .Skip(skip)
-                .Take(request.PageSize)
+                .Take(requestV2.PageSize)
                 .Select(p => new ProductResponse
                 {
                     ProductId = p.Id,
@@ -321,8 +319,8 @@ public class ProductService : IProductService
             {
                 TotalCurrentResults = result.Count, // number of items in this page
                
-                Page = request.Page,
-                PageSize = request.PageSize,
+                Page = requestV2.Page,
+                PageSize = requestV2.PageSize,
                 TotalResults = totalCount,
                 Results = result!
             }

@@ -12,5 +12,5 @@ public interface IProductService
     Task<BaseServiceResponse> DeleteProduct(Guid productId);
 
     Task<DataServiceResponse<PaginationServiceResponse<object?>>>
-           GetProducts(ProductQueryRequest request);
+           GetProducts(GetProductsRequestV2 requestV2);
 }

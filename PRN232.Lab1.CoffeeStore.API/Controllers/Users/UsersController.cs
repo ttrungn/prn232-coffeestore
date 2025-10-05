@@ -67,7 +67,7 @@ public class UsersController : ControllerBase
     /// <summary>
     /// Refresh JWT tokens endpoint
     /// </summary>
-    /// <param name="request">Refresh token request</param>
+    /// <param name="request">Refresh token requestV2</param>
     /// <returns>New JWT tokens if refresh successful</returns>
     [HttpPost("refresh-token")]
     public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequest request)

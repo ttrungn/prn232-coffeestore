@@ -21,25 +21,13 @@ public class ProductsController : ControllerBase
     /// <summary>
     /// Get all products with optional filtering and pagination
     /// </summary>
-    /// <param name="request">Query parameters for filtering and pagination including category, price range, and search terms</param>
+    /// <param name="requestV2">Query parameters for filtering and pagination including category, price range, and search terms</param>
     /// <returns>Paginated list of active products matching the filter criteria</returns>
     [MapToApiVersion(1)]
     [HttpGet("")]
-    public async Task<IActionResult> GetProductsAsync([FromQuery] GetProductsRequest request)
+    public async Task<IActionResult> GetProductsAsync([FromQuery] GetProductsRequest requestV2)
     {
-        var serviceResponse = await _productService.GetProducts(request);
-        return Ok(serviceResponse.ToDataApiResponse(Request, Response));
-    }
-
-    [MapToApiVersion(2)]
-    [HttpGet("")]
-    public async Task<IActionResult> GetProductAsync([FromQuery] ProductQueryRequest request)
-    {
-        var serviceResponse = await _productService.GetProducts(request);
-        if (!serviceResponse.Success)
-        {
-            return BadRequest(serviceResponse.ToBaseApiResponse());
-        }
+        var serviceResponse = await _productService.GetProducts(requestV2);
         return Ok(serviceResponse.ToDataApiResponse(Request, Response));
     }
 
@@ -47,7 +35,7 @@ public class ProductsController : ControllerBase
     /// Get detailed information about a specific product by its ID
     /// </summary>
     /// <param name="productId">The unique identifier of the product</param>
-    /// <param name="request">Base service request parameters</param>
+    /// <param name="request">Base service requestV2 parameters</param>
     /// <returns>Complete product details including name, description, price, and category information</returns>
     [MapToApiVersion(1)]
     [HttpGet("{productId}")]

@@ -27,7 +27,7 @@ public class PaymentsController : ControllerBase
     /// Generate VNPay payment URL for a pending order
     /// </summary>
     /// <param name="orderId">The unique identifier of the order to create payment for</param>
-    /// <param name="request">Base service request parameters</param>
+    /// <param name="request">Base service requestV2 parameters</param>
     /// <returns>VNPay payment URL for order checkout or error if order is not pending</returns>
     [HttpGet("url")]
     public async Task<IActionResult> GetPaymentUrl([FromQuery] Guid orderId, [FromQuery] BaseServiceRequest request)

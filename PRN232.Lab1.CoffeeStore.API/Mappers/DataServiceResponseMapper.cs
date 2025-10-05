@@ -13,29 +13,36 @@ public static class DataServiceResponseMapper
     
     public static DataApiResponse<T> ToDataApiResponse<T>(this DataServiceResponse<T> dataServiceResponse, HttpRequest? request = null, HttpResponse? response = null)
     {
-        if (typeof(T).IsGenericType && 
-            typeof(T).GetGenericTypeDefinition() == typeof(PaginationServiceResponse<>))
+        if (!typeof(T).IsGenericType ||
+            typeof(T).GetGenericTypeDefinition() != typeof(PaginationServiceResponse<>) || 
+            response == null || 
+            request == null || 
+            dataServiceResponse.Data == null)
         {
-            if (response != null && request != null && dataServiceResponse.Data != null)
+            return new DataApiResponse<T>()
             {
-                dynamic paginationResponse = dataServiceResponse.Data;
-                var paginationHeader = new PaginationHeader()
-                {
-                    Page = paginationResponse.Page,
-                    PageSize = paginationResponse.PageSize,
-                    TotalResults = paginationResponse.TotalResults,
-                    TotalCurrentResults = paginationResponse.TotalCurrentResults,
-                    PreviousPageLink = GetPaginationLink(request.GetDisplayUrl(), paginationResponse.Page - 1, paginationResponse.PageSize),
-                    NextPageLink = GetPaginationLink(request.GetDisplayUrl(), paginationResponse.Page + 1, paginationResponse.PageSize),
-                    FirstPageLink = GetPaginationLink(request.GetDisplayUrl(), 0, paginationResponse.PageSize),
-                };
-                response.Headers.Append("X-Pagination", JsonSerializer.Serialize(paginationHeader, HeaderJsonOptions));
+                Success = dataServiceResponse.Success,
+                Message = dataServiceResponse.Message,
+                Data = dataServiceResponse.Data
+            };
+        }
+
+        dynamic paginationResponse = dataServiceResponse.Data;
+        var paginationHeader = new PaginationHeader()
+        {
+            Page = paginationResponse.Page,
+            PageSize = paginationResponse.PageSize,
+            TotalResults = paginationResponse.TotalResults,
+            TotalCurrentResults = paginationResponse.TotalCurrentResults,
+            PreviousPageLink = GetPaginationLink(request.GetDisplayUrl(), paginationResponse.Page - 1, paginationResponse.PageSize),
+            NextPageLink = GetPaginationLink(request.GetDisplayUrl(), paginationResponse.Page + 1, paginationResponse.PageSize),
+            FirstPageLink = GetPaginationLink(request.GetDisplayUrl(), 0, paginationResponse.PageSize),
+        };
+        response.Headers.Append("X-Pagination", JsonSerializer.Serialize(paginationHeader, HeaderJsonOptions));
                 
 
-                response.Headers.AccessControlExposeHeaders = "X-Pagination";
-            }
-        }
-        
+        response.Headers.AccessControlExposeHeaders = "X-Pagination";
+
         return new DataApiResponse<T>()
         {
             Success = dataServiceResponse.Success,

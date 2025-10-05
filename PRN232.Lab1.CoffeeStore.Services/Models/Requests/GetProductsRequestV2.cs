@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace PRN232.Lab1.CoffeeStore.Services.Models.Requests
 {
-    public class ProductQueryRequest
+    public class GetProductsRequestV2
     {
         public string? Search { get; set; }        
         public string? Sort { get; set; }        // e.g. "name,-price"
