@@ -63,13 +63,20 @@ public class ApplicationDbContextInitializer
         }
     }
 
-    public async Task TrySeedAsync()
+    private async Task TrySeedAsync()
     {
+        // Seed Roles
         var customerRole = new IdentityRole(Roles.Customer);
+        var adminRole = new IdentityRole(Roles.Admin);
 
         if (_roleManager.Roles.All(r => r.Name != customerRole.Name))
         {
             await _roleManager.CreateAsync(customerRole);
+        }
+
+        if (_roleManager.Roles.All(r => r.Name != adminRole.Name))
+        {
+            await _roleManager.CreateAsync(adminRole);
         }
 
         // Default users
@@ -89,6 +96,25 @@ public class ApplicationDbContextInitializer
             if (!string.IsNullOrWhiteSpace(customerRole.Name))
             {
                 await _userManager.AddToRolesAsync(customer, [customerRole.Name]);
+            }
+        }
+
+        var admin = new User()
+        {
+            Id = "a11a11a1-a11a-11a1-a11a-11a1a11a11a1",
+            UserName = "admin",
+            Email = "admin@coffeestore.localhost",
+            FirstName = "System",
+            LastName = "Administrator",
+            EmailConfirmed = true
+        };
+
+        if (_userManager.Users.All(u => u.UserName != admin.UserName))
+        {
+            await _userManager.CreateAsync(admin, "Admin123!@#");
+            if (!string.IsNullOrWhiteSpace(adminRole.Name))
+            {
+                await _userManager.AddToRolesAsync(admin, [adminRole.Name]);
             }
         }
         

@@ -43,7 +43,7 @@ public class OrdersController : ControllerBase
     /// <param name="request">Base service requestV2 parameters</param>
     /// <returns>Complete order details with items, payment information, and totals</returns>
     [MapToApiVersion(1)]
-    [HttpGet("{orderId}")]
+    [HttpGet("{orderId:guid}")]
     public async Task<IActionResult> GetOrderByIdAsync([FromRoute] Guid orderId, [FromQuery] BaseServiceRequest request)
     {
         var serviceResponse = await _orderService.GetOrderById(orderId);
@@ -78,8 +78,9 @@ public class OrdersController : ControllerBase
     /// <param name="orderId">The unique identifier of the order to update</param>
     /// <param name="request">Updated order details with new product list</param>
     /// <returns>Success status or validation errors</returns>
+    [Authorize(Roles = Roles.Customer)]
     [MapToApiVersion(1)]
-    [HttpPut("{orderId}")]
+    [HttpPut("{orderId:guid}")]
     public async Task<IActionResult> UpdateOrderAsync([FromRoute] Guid orderId, [FromBody] UpdateOrderRequest request)
     {
         var serviceResponse = await _orderService.UpdateOrder(orderId, request);
@@ -97,30 +98,12 @@ public class OrdersController : ControllerBase
     /// </summary>
     /// <param name="orderId">The unique identifier of the order to cancel</param>
     /// <returns>Success status or error if order cannot be cancelled</returns>
+    [Authorize(Roles = Roles.Customer)]
     [MapToApiVersion(1)]
-    [HttpPatch("{orderId}/cancel")]
+    [HttpPatch("{orderId:guid}/cancel")]
     public async Task<IActionResult> CancelOrderAsync([FromRoute] Guid orderId)
     {
         var serviceResponse = await _orderService.UpdateOrderStatus(orderId, OrderStatus.Cancelled);
-        
-        if (serviceResponse.Success)
-        {
-            return Ok(serviceResponse.ToBaseApiResponse());
-        }
-        
-        return BadRequest(serviceResponse.ToBaseApiResponse());
-    }
-
-    /// <summary>
-    /// Mark an order as completed by changing its status to Completed
-    /// </summary>
-    /// <param name="orderId">The unique identifier of the order to complete</param>
-    /// <returns>Success status or error if order cannot be completed</returns>
-    [MapToApiVersion(1)]
-    [HttpPatch("{orderId}/complete")]
-    public async Task<IActionResult> CompleteOrderAsync([FromRoute] Guid orderId)
-    {
-        var serviceResponse = await _orderService.UpdateOrderStatus(orderId, OrderStatus.Completed);
         
         if (serviceResponse.Success)
         {
@@ -135,8 +118,9 @@ public class OrdersController : ControllerBase
     /// </summary>
     /// <param name="orderId">The unique identifier of the order to finalize</param>
     /// <returns>Success status or error if order is not in editing state</returns>
+    [Authorize(Roles = Roles.Customer)]
     [MapToApiVersion(1)]
-    [HttpPatch("{orderId}/finalize")]
+    [HttpPatch("{orderId:guid}/finalize")]
     public async Task<IActionResult> FinalizeOrderEditingAsync([FromRoute] Guid orderId)
     {
         var serviceResponse = await _orderService.UpdateOrderStatus(orderId, OrderStatus.Pending);

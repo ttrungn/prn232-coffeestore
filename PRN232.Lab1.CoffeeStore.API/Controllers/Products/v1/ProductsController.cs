@@ -1,6 +1,8 @@
 using Asp.Versioning;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PRN232.Lab1.CoffeeStore.API.Mappers;
+using PRN232.Lab1.CoffeeStore.Repositories.Constants;
 using PRN232.Lab1.CoffeeStore.Services.Interfaces.Services;
 using PRN232.Lab1.CoffeeStore.Services.Models.Requests;
 
@@ -37,8 +39,9 @@ public class ProductsController : ControllerBase
     /// <param name="productId">The unique identifier of the product</param>
     /// <param name="request">Base service requestV2 parameters</param>
     /// <returns>Complete product details including name, description, price, and category information</returns>
+    [Authorize(Roles = Roles.Admin)]
     [MapToApiVersion(1)]
-    [HttpGet("{productId}")]
+    [HttpGet("{productId:guid}")]
     public async Task<IActionResult> GetProductByIdAsync([FromRoute] Guid productId, [FromQuery] BaseServiceRequest request)
     {
         var serviceResponse = await _productService.GetProductById(productId);
@@ -55,6 +58,7 @@ public class ProductsController : ControllerBase
     /// </summary>
     /// <param name="request">Product creation details including name, description, price, and category</param>
     /// <returns>Created product ID or validation errors</returns>
+    [Authorize(Roles = Roles.Admin)]
     [MapToApiVersion(1)]
     [HttpPost("")]
     public async Task<IActionResult> CreateProductAsync([FromBody] CreateProductRequest request)
@@ -75,8 +79,9 @@ public class ProductsController : ControllerBase
     /// <param name="productId">The unique identifier of the product to update</param>
     /// <param name="request">Updated product details including name, description, price, and category</param>
     /// <returns>Success status or validation errors</returns>
+    [Authorize(Roles = Roles.Admin)]
     [MapToApiVersion(1)]
-    [HttpPut("{productId}")]
+    [HttpPut("{productId:guid}")]
     public async Task<IActionResult> UpdateProductAsync(Guid productId, [FromBody] UpdateProductRequest request)
     {
         var serviceResponse = await _productService.UpdateProduct(productId, request);
@@ -94,8 +99,9 @@ public class ProductsController : ControllerBase
     /// </summary>
     /// <param name="productId">The unique identifier of the product to delete</param>
     /// <returns>Success status or not found error</returns>
+    [Authorize(Roles = Roles.Admin)]
     [MapToApiVersion(1)]
-    [HttpDelete("{productId}")]
+    [HttpDelete("{productId:guid}")]
     public async Task<IActionResult> DeleteProductAsync(Guid productId)
     {
         var serviceResponse = await _productService.DeleteProduct(productId);
