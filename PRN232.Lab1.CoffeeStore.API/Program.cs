@@ -1,3 +1,4 @@
+using Asp.Versioning.ApiExplorer;
 using PRN232.Lab1.CoffeeStore.API;
 using PRN232.Lab1.CoffeeStore.API.Utils;
 using PRN232.Lab1.CoffeeStore.Repositories;
@@ -11,11 +12,22 @@ builder.Services.AddApiServices(builder.Configuration);
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline
+// Configure the HTTP requestV2 pipeline
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwaggerUI(options =>
+    {
+        var provider = app.Services.GetRequiredService<IApiVersionDescriptionProvider>();
+        foreach (var desc in provider.ApiVersionDescriptions)
+        {
+            options.SwaggerEndpoint(
+                $"/swagger/{desc.GroupName}/swagger.json",
+                $"CoffeeStore API {desc.GroupName.ToUpperInvariant()}" + (desc.IsDeprecated ? " (deprecated)" : "")
+            );
+        }
+        // optional: options.RoutePrefix = string.Empty;
+    });
     await app.InitialiseDatabaseAsync();
 }
 

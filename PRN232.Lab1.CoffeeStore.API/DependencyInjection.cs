@@ -36,7 +36,6 @@ public static class DependencyInjection
         services.AddSwaggerGen(c =>
         {
             c.DescribeAllParametersInCamelCase();
-            c.SwaggerDoc("v1", new OpenApiInfo { Title = "Coffee Store API", Version = "v1" });
             c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
             {
                 In = ParameterLocation.Header,
@@ -62,6 +61,7 @@ public static class DependencyInjection
                 }
             });
         });
+        services.ConfigureOptions<ConfigureSwaggerOptions>();
         services.AddControllers(options =>
             {
                 options.RespectBrowserAcceptHeader = true;
