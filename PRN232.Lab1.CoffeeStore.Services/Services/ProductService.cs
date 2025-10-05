@@ -212,10 +212,10 @@ public class ProductService : IProductService
             var sortFields = requestV2.Sort.Split(',', StringSplitOptions.TrimEntries);
 
             var invalidSorts = sortFields
-                .Select(sf => sf.StartsWith("-") ? sf[1..] : sf)
+                .Select(sf => sf.StartsWith($"-") ? sf[1..] : sf)
                 .Where(sf => !entityProps.Contains(sf))
                 .ToList();
-            if (invalidSorts.Any())
+            if (invalidSorts.Count != 0)
             {
                 return new DataServiceResponse<PaginationServiceResponse<object?>>
                 {
@@ -234,7 +234,7 @@ public class ProductService : IProductService
                 .Where(sf => !entityProps.Contains(sf))
                 .ToList();
 
-            if (invalidSelects.Any())
+            if (invalidSelects.Count != 0)
             {
                 return new DataServiceResponse<PaginationServiceResponse<object?>>
                 {
@@ -257,8 +257,8 @@ public class ProductService : IProductService
 
             var validSorts = sortFields.Select(f =>
             {
-                bool desc = f.StartsWith("-");
-                string prop = desc ? f[..] : f;
+                bool desc = f.StartsWith($"-");
+                string prop = desc ? f[1..] : f;
                 var realProp = entityProps.FirstOrDefault(p =>
                    string.Equals(p, prop, StringComparison.OrdinalIgnoreCase))
                    ?? throw new Exception($"Invalid sort field: {prop}");
@@ -266,12 +266,12 @@ public class ProductService : IProductService
                 return desc ? $"{realProp} descending" : $"{realProp} ascending";
             });
 
-            query = query.OrderBy(config, string.Join(",", validSorts));
+            query = query.OrderBy(config, string.Join(",", validSorts)).ThenBy(p => p.Id);
 
         }
         else
         {
-            query = query.OrderBy(p => p.Name);
+            query = query.OrderBy(p => p.Name).ThenBy(p => p.Id);
         }
 
         var totalCount = await query.CountAsync();

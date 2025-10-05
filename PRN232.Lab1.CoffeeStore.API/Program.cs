@@ -26,7 +26,6 @@ if (app.Environment.IsDevelopment())
                 $"CoffeeStore API {desc.GroupName.ToUpperInvariant()}" + (desc.IsDeprecated ? " (deprecated)" : "")
             );
         }
-        // optional: options.RoutePrefix = string.Empty;
     });
     await app.InitialiseDatabaseAsync();
 }
