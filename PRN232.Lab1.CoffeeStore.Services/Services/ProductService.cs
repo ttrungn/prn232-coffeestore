@@ -1,12 +1,13 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using PRN232.Lab1.CoffeeStore.Repositories.Interfaces;
+using PRN232.Lab1.CoffeeStore.Repositories.Models;
 using PRN232.Lab1.CoffeeStore.Services.Interfaces;
 using PRN232.Lab1.CoffeeStore.Services.Interfaces.Services;
 using PRN232.Lab1.CoffeeStore.Services.Mappers;
 using PRN232.Lab1.CoffeeStore.Services.Models.Requests;
 using PRN232.Lab1.CoffeeStore.Services.Models.Responses;
-using PRN232.Lab1.CoffeeStore.Repositories.Interfaces;
-using PRN232.Lab1.CoffeeStore.Repositories.Models;
+using System.Linq.Dynamic.Core;
 
 namespace PRN232.Lab1.CoffeeStore.Services.Services;
 
@@ -189,5 +190,143 @@ public class ProductService : IProductService
             Success = true,
             Message = "Product deleted successfully"
         };
+    }
+
+    public async Task<DataServiceResponse<PaginationServiceResponse<object?>>> GetProducts(ProductQueryRequest request)
+    {
+        var productRepository = _unitOfWork.GetRepository<Product, Guid>();
+        var query = productRepository.Query()
+            .Include(p => p.Category)
+                .Where(p => p.Category != null && p.Category.IsActive)   
+
+            .AsNoTracking();
+
+        var config = new ParsingConfig { IsCaseSensitive = false };
+
+
+        var entityProps = typeof(Product).GetProperties()
+            .Select(p => p.Name)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+
+        if (!string.IsNullOrEmpty(request.Sort))
+        {
+            var sortFields = request.Sort.Split(',', StringSplitOptions.TrimEntries);
+
+            var invalidSorts = sortFields
+                .Select(sf => sf.StartsWith("-") ? sf[1..] : sf)
+                .Where(sf => !entityProps.Contains(sf))
+                .ToList();
+            if (invalidSorts.Any())
+            {
+                return new DataServiceResponse<PaginationServiceResponse<object?>>
+                {
+                    Success = false,
+                    Message = $"Invalid select fields: {string.Join(", ", invalidSorts)}",
+                    Data = new PaginationServiceResponse<object?> { }
+                };
+            }
+        }
+
+        if (!string.IsNullOrEmpty(request.Select))
+        {
+            var selectFields = request.Select.Split(',', StringSplitOptions.TrimEntries);
+
+            var invalidSelects = selectFields
+                .Where(sf => !entityProps.Contains(sf))
+                .ToList();
+
+            if (invalidSelects.Any())
+            {
+                return new DataServiceResponse<PaginationServiceResponse<object?>>
+                {
+                    Success = false,
+                    Message = $"Invalid select fields: {string.Join(", ", invalidSelects)}",
+                    Data = new PaginationServiceResponse<object?> { }
+                };
+            }
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.Search))
+        {
+            query = query.Where(p => p.Name.Contains(request.Search) ||
+                                     p.Description.Contains(request.Search));
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.Sort))
+        {
+            var sortFields = request.Sort.Split(',', StringSplitOptions.TrimEntries);
+
+            var validSorts = sortFields.Select(f =>
+            {
+                bool desc = f.StartsWith("-");
+                string prop = desc ? f[..] : f;
+                var realProp = entityProps.FirstOrDefault(p =>
+                   string.Equals(p, prop, StringComparison.OrdinalIgnoreCase))
+                   ?? throw new Exception($"Invalid sort field: {prop}");
+
+                return desc ? $"{realProp} descending" : $"{realProp} ascending";
+            });
+
+            query = query.OrderBy(config, string.Join(",", validSorts));
+
+        }
+        else
+        {
+            query = query.OrderBy(p => p.Name);
+        }
+
+        var totalCount = await query.CountAsync();
+        var skip = (request.Page - 1) * request.PageSize;
+
+
+        object data;
+
+        if (!string.IsNullOrEmpty(request.Select))
+        {
+            var fields = request.Select.Split(',', StringSplitOptions.TrimEntries);
+            var selector = "new(" + string.Join(",", fields) + ")";
+            data = await query.Skip(skip).Take(request.PageSize)
+                .Select(config, selector)
+                .ToDynamicListAsync();
+        }
+        else
+        {
+            data = await query
+                .Skip(skip)
+                .Take(request.PageSize)
+                .Select(p => new ProductResponse
+                {
+                    ProductId = p.Id,
+                    Name = p.Name,
+                    Description = p.Description,
+                    Price = p.Price,
+                    Category = new CategoryResponse
+                    {
+                        CategoryId = p.CategoryId,
+                        Name = p.Name,
+                        Description = p.Description,
+                    }
+                })
+                .ToListAsync();
+        }
+
+        var result = ((IEnumerable<object>)data).ToList();
+
+        return new DataServiceResponse<PaginationServiceResponse<object?>>
+        {
+            Success = true,
+            Message = "Get Products Successfully",
+            Data = new PaginationServiceResponse<object?>
+            {
+                TotalCurrentResults = result.Count, // number of items in this page
+               
+                Page = request.Page,
+                PageSize = request.PageSize,
+                TotalResults = totalCount,
+                Results = result!
+            }
+        };
+
     }
 }

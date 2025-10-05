@@ -10,4 +10,7 @@ public interface IProductService
     Task<DataServiceResponse<Guid>> CreateProduct(CreateProductRequest request);
     Task<BaseServiceResponse> UpdateProduct(Guid productId, UpdateProductRequest request);
     Task<BaseServiceResponse> DeleteProduct(Guid productId);
+
+    Task<DataServiceResponse<PaginationServiceResponse<object?>>>
+           GetProducts(ProductQueryRequest request);
 }

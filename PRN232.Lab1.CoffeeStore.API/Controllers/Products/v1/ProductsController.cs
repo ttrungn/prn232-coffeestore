@@ -30,7 +30,19 @@ public class ProductsController : ControllerBase
         var serviceResponse = await _productService.GetProducts(request);
         return Ok(serviceResponse.ToDataApiResponse(Request, Response));
     }
-    
+
+    [MapToApiVersion(2)]
+    [HttpGet("")]
+    public async Task<IActionResult> GetProductAsync([FromQuery] ProductQueryRequest request)
+    {
+        var serviceResponse = await _productService.GetProducts(request);
+        if (!serviceResponse.Success)
+        {
+            return BadRequest(serviceResponse.ToBaseApiResponse());
+        }
+        return Ok(serviceResponse.ToDataApiResponse(Request, Response));
+    }
+
     /// <summary>
     /// Get detailed information about a specific product by its ID
     /// </summary>
