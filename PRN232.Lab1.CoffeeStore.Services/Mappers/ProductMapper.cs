@@ -26,7 +26,8 @@ public static class ProductMapper
             Name = request.Name,
             Price = request.Price,
             Description = request.Description,
-            CategoryId = request.CategoryId
+            CategoryId = request.CategoryId,
+            IsActive = true
         };
     }
 

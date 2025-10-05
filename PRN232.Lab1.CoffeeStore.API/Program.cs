@@ -32,6 +32,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseExceptionHandler();
 app.UseRouting();
+app.UseCors("AllowLocationHeader");
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapGet("/", context =>

@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Identity;
 using PRN232.Lab1.CoffeeStore.Repositories.Constants;
+using PRN232.Lab1.CoffeeStore.Repositories.Enums;
 using PRN232.Lab1.CoffeeStore.Repositories.Models;
 
 namespace PRN232.Lab1.CoffeeStore.API.Utils;
@@ -111,7 +112,7 @@ public class ApplicationDbContextInitializer
 
         if (_userManager.Users.All(u => u.UserName != admin.UserName))
         {
-            await _userManager.CreateAsync(admin, "Admin123!@#");
+            await _userManager.CreateAsync(admin, "12345aA#");
             if (!string.IsNullOrWhiteSpace(adminRole.Name))
             {
                 await _userManager.AddToRolesAsync(admin, [adminRole.Name]);
@@ -1232,10 +1233,306 @@ public class ApplicationDbContextInitializer
             }
         };
 
+        
+        
         await _context.Categories.AddRangeAsync(categories);
         await _context.Products.AddRangeAsync(products);
         await _context.Menus.AddRangeAsync(menus);
         await _context.ProductInMenus.AddRangeAsync(productInMenus);
+
+        // Seed Orders with different statuses
+        var orders = new List<Order>
+        {
+            // Editing Order - Customer is still building their order
+            new Order
+            {
+                Id = Guid.Parse("11111111-aaaa-bbbb-cccc-111111111111"),
+                UserId = "8bb58df8-a28f-47eb-9036-9e102a8134f8", // Customer user
+                OrderDate = DateTime.UtcNow.AddDays(-5),
+                Status = OrderStatus.Editing,
+                PaymentId = null,
+                IsActive = true
+            },
+            
+            // Pending Order - Order placed, waiting for payment
+            new Order
+            {
+                Id = Guid.Parse("22222222-aaaa-bbbb-cccc-222222222222"),
+                UserId = "8bb58df8-a28f-47eb-9036-9e102a8134f8", // Customer user
+                OrderDate = DateTime.UtcNow.AddDays(-3),
+                Status = OrderStatus.Pending,
+                PaymentId = Guid.Parse("11111111-eeee-aaaa-bbbb-111111111111"),
+                IsActive = true
+            },
+            
+            // Another Pending Order
+            new Order
+            {
+                Id = Guid.Parse("33333333-aaaa-bbbb-cccc-333333333333"),
+                UserId = "8bb58df8-a28f-47eb-9036-9e102a8134f8", // Customer user
+                OrderDate = DateTime.UtcNow.AddDays(-2),
+                Status = OrderStatus.Pending,
+                PaymentId = Guid.Parse("22222222-eeee-aaaa-bbbb-222222222222"),
+                IsActive = true
+            },
+            
+            // Completed Order - Successfully paid and completed
+            new Order
+            {
+                Id = Guid.Parse("44444444-aaaa-bbbb-cccc-444444444444"),
+                UserId = "8bb58df8-a28f-47eb-9036-9e102a8134f8", // Customer user
+                OrderDate = DateTime.UtcNow.AddDays(-7),
+                Status = OrderStatus.Completed,
+                PaymentId = Guid.Parse("33333333-eeee-aaaa-bbbb-333333333333"),
+                IsActive = true
+            },
+            
+            // Another Completed Order
+            new Order
+            {
+                Id = Guid.Parse("55555555-aaaa-bbbb-cccc-555555555555"),
+                UserId = "8bb58df8-a28f-47eb-9036-9e102a8134f8", // Customer user
+                OrderDate = DateTime.UtcNow.AddDays(-10),
+                Status = OrderStatus.Completed,
+                PaymentId = Guid.Parse("44444444-eeee-aaaa-bbbb-444444444444"),
+                IsActive = true
+            },
+            
+            // Cancelled Order - Payment failed or customer cancelled
+            new Order
+            {
+                Id = Guid.Parse("66666666-aaaa-bbbb-cccc-666666666666"),
+                UserId = "8bb58df8-a28f-47eb-9036-9e102a8134f8", // Customer user
+                OrderDate = DateTime.UtcNow.AddDays(-4),
+                Status = OrderStatus.Cancelled,
+                PaymentId = Guid.Parse("55555555-eeee-aaaa-bbbb-555555555555"),
+                IsActive = true
+            },
+            
+            // Another Cancelled Order
+            new Order
+            {
+                Id = Guid.Parse("77777777-aaaa-bbbb-cccc-777777777777"),
+                UserId = "8bb58df8-a28f-47eb-9036-9e102a8134f8", // Customer user
+                OrderDate = DateTime.UtcNow.AddDays(-6),
+                Status = OrderStatus.Cancelled,
+                PaymentId = null, // No payment created yet
+                IsActive = true
+            }
+        };
+
+        // Seed OrderDetails for each order
+        var orderDetails = new List<OrderDetail>
+        {
+            new OrderDetail
+            {
+                Id = Guid.Parse("d1d1d1d1-d1d1-d1d1-d1d1-d1d1d1d1d1d1"),
+                OrderId = Guid.Parse("11111111-aaaa-bbbb-cccc-111111111111"),
+                ProductId = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
+                Quantity = 2,
+                UnitPrice = 123000,
+                IsActive = true
+            },
+            new OrderDetail
+            {
+                Id = Guid.Parse("d2d2d2d2-d2d2-d2d2-d2d2-d2d2d2d2d2d2"),
+                OrderId = Guid.Parse("11111111-aaaa-bbbb-cccc-111111111111"),
+                ProductId = Guid.Parse("c8c8c8c8-c8c8-c8c8-c8c8-c8c8c8c8c8c8"),
+                Quantity = 1,
+                UnitPrice = 123000,
+                IsActive = true
+            },
+
+            new OrderDetail
+            {
+                Id = Guid.Parse("d3d3d3d3-d3d3-d3d3-d3d3-d3d3d3d3d3d3"),
+                OrderId = Guid.Parse("22222222-aaaa-bbbb-cccc-222222222222"),
+                ProductId = Guid.Parse("dddddddd-dddd-dddd-dddd-dddddddddddd"),
+                Quantity = 1,
+                UnitPrice = 123000,
+                IsActive = true
+            },
+            new OrderDetail
+            {
+                Id = Guid.Parse("d4d4d4d4-d4d4-d4d4-d4d4-d4d4d4d4d4d4"),
+                OrderId = Guid.Parse("22222222-aaaa-bbbb-cccc-222222222222"),
+                ProductId = Guid.Parse("eaeaeaea-eaea-eaea-eaea-eaeaeaeaeaea"),
+                Quantity = 2,
+                UnitPrice = 123000,
+                IsActive = true
+            },
+            new OrderDetail
+            {
+                Id = Guid.Parse("d5d5d5d5-d5d5-d5d5-d5d5-d5d5d5d5d5d5"),
+                OrderId = Guid.Parse("22222222-aaaa-bbbb-cccc-222222222222"),
+                ProductId = Guid.Parse("55667788-5566-7788-99aa-bbccddeeff00"),
+                Quantity = 1,
+                UnitPrice = 123000,
+                IsActive = true
+            },
+
+            new OrderDetail
+            {
+                Id = Guid.Parse("d6d6d6d6-d6d6-d6d6-d6d6-d6d6d6d6d6d6"),
+                OrderId = Guid.Parse("33333333-aaaa-bbbb-cccc-333333333333"),
+                ProductId = Guid.Parse("20202020-2020-2020-2020-202020202020"),
+                Quantity = 1,
+                UnitPrice = 123000,
+                IsActive = true
+            },
+            new OrderDetail
+            {
+                Id = Guid.Parse("d7d7d7d7-d7d7-d7d7-d7d7-d7d7d7d7d7d7"),
+                OrderId = Guid.Parse("33333333-aaaa-bbbb-cccc-333333333333"),
+                ProductId = Guid.Parse("bbccddee-bbcc-ddee-ff00-112233445566"),
+                Quantity = 1,
+                UnitPrice = 123000,
+                IsActive = true
+            },
+
+            new OrderDetail
+            {
+                Id = Guid.Parse("d8d8d8d8-d8d8-d8d8-d8d8-d8d8d8d8d8d8"),
+                OrderId = Guid.Parse("44444444-aaaa-bbbb-cccc-444444444444"),
+                ProductId = Guid.Parse("eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"),
+                Quantity = 2,
+                UnitPrice = 123000,
+                IsActive = true
+            },
+            new OrderDetail
+            {
+                Id = Guid.Parse("d9d9d9d9-d9d9-d9d9-d9d9-d9d9d9d9d9d9"),
+                OrderId = Guid.Parse("44444444-aaaa-bbbb-cccc-444444444444"),
+                ProductId = Guid.Parse("778899aa-7788-99aa-bbcc-ddeeff334455"),
+                Quantity = 1,
+                UnitPrice = 123000,
+                IsActive = true
+            },
+            new OrderDetail
+            {
+                Id = Guid.Parse("dadadada-dada-dada-dada-dadadadadada"),
+                OrderId = Guid.Parse("44444444-aaaa-bbbb-cccc-444444444444"),
+                ProductId = Guid.Parse("60606060-6060-6060-6060-606060606060"),
+                Quantity = 1,
+                UnitPrice = 123000,
+                IsActive = true
+            },
+
+            new OrderDetail
+            {
+                Id = Guid.Parse("dbdbdbdb-dbdb-dbdb-dbdb-dbdbdbdbdbdb"),
+                OrderId = Guid.Parse("55555555-aaaa-bbbb-cccc-555555555555"),
+                ProductId = Guid.Parse("30303030-3030-3030-3030-303030303030"),
+                Quantity = 1,
+                UnitPrice = 123000,
+                IsActive = true
+            },
+            new OrderDetail
+            {
+                Id = Guid.Parse("dcdcdcdc-dcdc-dcdc-dcdc-dcdcdcdcdcdc"),
+                OrderId = Guid.Parse("55555555-aaaa-bbbb-cccc-555555555555"),
+                ProductId = Guid.Parse("ccddeeff-ccdd-eeff-0011-223344556677"),
+                Quantity = 1,
+                UnitPrice = 123000,
+                IsActive = true
+            },
+            new OrderDetail
+            {
+                Id = Guid.Parse("ddddddde-dddd-dddd-dddd-ddddddddddde"),
+                OrderId = Guid.Parse("55555555-aaaa-bbbb-cccc-555555555555"),
+                ProductId = Guid.Parse("11223344-1122-3344-5566-778899aabbcc"),
+                Quantity = 1,
+                UnitPrice = 123000,
+                IsActive = true
+            },
+
+            new OrderDetail
+            {
+                Id = Guid.Parse("dededede-dede-dede-dede-dedededede0e"),
+                OrderId = Guid.Parse("66666666-aaaa-bbbb-cccc-666666666666"),
+                ProductId = Guid.Parse("a1a1a1a1-a1a1-a1a1-a1a1-a1a1a1a1a1a1"),
+                Quantity = 1,
+                UnitPrice = 123000,
+                IsActive = true
+            },
+            new OrderDetail
+            {
+                Id = Guid.Parse("dfdfdfdf-dfdf-dfdf-dfdf-dfdfdfdfdfdf"),
+                OrderId = Guid.Parse("66666666-aaaa-bbbb-cccc-666666666666"),
+                ProductId = Guid.Parse("d9d9d9d9-d9d9-d9d9-d9d9-d9d9d9d9d9d9"),
+                Quantity = 2,
+                UnitPrice = 123000,
+                IsActive = true
+            },
+
+            new OrderDetail
+            {
+                Id = Guid.Parse("e0e0e0e0-e0e0-e0e0-e0e0-e0e0e0e0e0e0"),
+                OrderId = Guid.Parse("77777777-aaaa-bbbb-cccc-777777777777"),
+                ProductId = Guid.Parse("c2c2c2c2-c2c2-c2c2-c2c2-c2c2c2c2c2c2"),
+                Quantity = 1,
+                UnitPrice = 123000,
+                IsActive = true
+            }
+        };
+
+        // Seed Payments for orders that have payments
+        var payments = new List<Payment>
+        {
+            new Payment
+            {
+                Id = Guid.Parse("11111111-eeee-aaaa-bbbb-111111111111"),
+                OrderId = Guid.Parse("22222222-aaaa-bbbb-cccc-222222222222"),
+                Amount = 369000,
+                PaymentDate = DateTime.UtcNow.AddDays(-3),
+                PaymentMethod = PaymentMethod.VnPay,
+                IsActive = true
+            },
+            
+            new Payment
+            {
+                Id = Guid.Parse("22222222-eeee-aaaa-bbbb-222222222222"),
+                OrderId = Guid.Parse("33333333-aaaa-bbbb-cccc-333333333333"),
+                Amount = 246000,
+                PaymentDate = DateTime.UtcNow.AddDays(-2),
+                PaymentMethod = PaymentMethod.VnPay,
+                IsActive = true
+            },
+            
+            new Payment
+            {
+                Id = Guid.Parse("33333333-eeee-aaaa-bbbb-333333333333"),
+                OrderId = Guid.Parse("44444444-aaaa-bbbb-cccc-444444444444"),
+                Amount = 492000,
+                PaymentDate = DateTime.UtcNow.AddDays(-7),
+                PaymentMethod = PaymentMethod.VnPay,
+                IsActive = true
+            },
+            
+            new Payment
+            {
+                Id = Guid.Parse("44444444-eeee-aaaa-bbbb-444444444444"),
+                OrderId = Guid.Parse("55555555-aaaa-bbbb-cccc-555555555555"),
+                Amount = 369000,
+                PaymentDate = DateTime.UtcNow.AddDays(-10),
+                PaymentMethod = PaymentMethod.VnPay,
+                IsActive = true
+            },
+            
+            new Payment
+            {
+                Id = Guid.Parse("55555555-eeee-aaaa-bbbb-555555555555"),
+                OrderId = Guid.Parse("66666666-aaaa-bbbb-cccc-666666666666"),
+                Amount = 369000,
+                PaymentDate = DateTime.UtcNow.AddDays(-4),
+                PaymentMethod = PaymentMethod.VnPay,
+                IsActive = true
+            }
+        };
+
+        await _context.Orders.AddRangeAsync(orders);
+        await _context.OrderDetails.AddRangeAsync(orderDetails);
+        await _context.Payments.AddRangeAsync(payments);
 
         await _context.SaveChangesAsync();
     }
