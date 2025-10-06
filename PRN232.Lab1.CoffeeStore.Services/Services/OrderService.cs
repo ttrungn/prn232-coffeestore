@@ -312,7 +312,7 @@ public class OrderService : IOrderService
         return new BaseServiceResponse()
         {
             Success = true,
-            Message = "Order cancelled successfully"
+            Message = "Update order status successfully"
         };
     }
 }

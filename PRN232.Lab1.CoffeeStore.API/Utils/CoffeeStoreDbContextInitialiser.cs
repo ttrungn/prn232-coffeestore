@@ -112,7 +112,7 @@ public class ApplicationDbContextInitializer
 
         if (_userManager.Users.All(u => u.UserName != admin.UserName))
         {
-            await _userManager.CreateAsync(admin, "Admin123!@#");
+            await _userManager.CreateAsync(admin, "12345aA#");
             if (!string.IsNullOrWhiteSpace(adminRole.Name))
             {
                 await _userManager.AddToRolesAsync(admin, [adminRole.Name]);
