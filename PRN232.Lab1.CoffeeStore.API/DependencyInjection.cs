@@ -101,7 +101,16 @@ public static class DependencyInjection
                         ?? throw new ArgumentException("JwtSettings:Key is not found")))
                 };
             });
-        
+        services.AddCors(options =>
+        {
+            options.AddPolicy(name: "AllowLocationHeader", policy =>
+            {
+                policy.AllowAnyOrigin()
+                    .AllowAnyMethod()
+                    .AllowAnyHeader()
+                    .WithExposedHeaders("Location");
+            });
+        });
         services.AddScoped<ApplicationDbContextInitializer>();
     }
 }
