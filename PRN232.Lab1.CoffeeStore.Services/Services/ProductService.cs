@@ -1,5 +1,6 @@
 using System.Linq.Dynamic.Core;
 using System.Text.Json;
+using Ganss.Xss;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Caching.Memory;
@@ -24,14 +25,15 @@ public class ProductService : IProductService
     private readonly ILogger<ProductService> _logger;
     private readonly IMemoryCache _memoryCache;
     private readonly IUnitOfWork _unitOfWork;
-
+    private readonly IHtmlSanitizer _sanitizer;
     public ProductService(ILogger<ProductService> logger, IUnitOfWork unitOfWork, IMemoryCache memoryCache,
-        IDistributedCache distributedCache)
+        IDistributedCache distributedCache, IHtmlSanitizer sanitizer)
     {
         _logger = logger;
         _unitOfWork = unitOfWork;
         _memoryCache = memoryCache;
         _distributedCache = distributedCache;
+        _sanitizer = sanitizer;
     }
 
     public async Task<DataServiceResponse<PaginationServiceResponse<ProductResponse>>> GetProducts(
@@ -97,6 +99,11 @@ public class ProductService : IProductService
 
     public async Task<DataServiceResponse<Guid>> CreateProduct(CreateProductRequest request)
     {
+        // Sanitize inputs to prevent XSS
+        var cleanDesc = request.Description! is null ? null : _sanitizer.Sanitize(request.Description);
+        _logger.LogInformation("Raw desc: {Raw}", request.Description);
+        _logger.LogInformation("Clean desc: {Clean}", cleanDesc);
+
         var productRepository = _unitOfWork.GetRepository<Product, Guid>();
         var categoryRepository = _unitOfWork.GetRepository<Category, Guid>();
 
@@ -113,7 +120,7 @@ public class ProductService : IProductService
         }
 
         // Create new product
-        var product = request.ToProduct();
+        var product = request.ToProduct(cleanDesc!);
         await productRepository.AddAsync(product);
         await _unitOfWork.SaveChangesAsync();
 

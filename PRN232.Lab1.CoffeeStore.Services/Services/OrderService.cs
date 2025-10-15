@@ -97,6 +97,16 @@ public class OrderService : IOrderService
 
     public async Task<DataServiceResponse<Guid>> CreateOrder(CreateOrderRequest request)
     {
+        
+        if(request.OrderItems.Count == 0)
+        {
+            return new DataServiceResponse<Guid>()
+            {
+                Success = false,
+                Message = "Order must contain at least 1 item",
+                Data = Guid.Empty
+            };
+        }
         var orderRepository = _unitOfWork.GetRepository<Order, Guid>();
         var productRepository = _unitOfWork.GetRepository<Product, Guid>();
         var orderDetailRepository = _unitOfWork.GetRepository<OrderDetail, Guid>();

@@ -18,14 +18,14 @@ public static class ProductMapper
         };
     }
 
-    public static Product ToProduct(this CreateProductRequest request)
+    public static Product ToProduct(this CreateProductRequest request, string cleanDesc)
     {
         return new Product()
         {
             Id = Guid.NewGuid(),
             Name = request.Name,
             Price = request.Price,
-            Description = request.Description,
+            Description = cleanDesc,
             CategoryId = request.CategoryId,
             IsActive = true
         };

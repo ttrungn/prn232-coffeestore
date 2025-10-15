@@ -8,6 +8,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\PRN232.Lab1.CoffeeStore.Repositories\PRN232.Lab1.CoffeeStore.Repositories.csproj" />
+      <PackageReference Include="HtmlSanitizer" Version="9.0.886" />
     </ItemGroup>
 
     <ItemGroup>
