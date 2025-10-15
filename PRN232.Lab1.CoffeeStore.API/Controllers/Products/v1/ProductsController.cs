@@ -21,7 +21,7 @@ public class ProductsController : ControllerBase
     }
 
     /// <summary>
-    /// Get all products with optional filtering and pagination
+    ///     Get all products with optional filtering and pagination
     /// </summary>
     /// <param name="requestV2">Query parameters for filtering and pagination including category, price range, and search terms</param>
     /// <returns>Paginated list of active products matching the filter criteria</returns>
@@ -34,7 +34,7 @@ public class ProductsController : ControllerBase
     }
 
     /// <summary>
-    /// Get detailed information about a specific product by its ID
+    ///     Get detailed information about a specific product by its ID
     /// </summary>
     /// <param name="productId">The unique identifier of the product</param>
     /// <param name="request">Base service requestV2 parameters</param>
@@ -42,19 +42,62 @@ public class ProductsController : ControllerBase
     [Authorize(Roles = Roles.Admin)]
     [MapToApiVersion(1)]
     [HttpGet("{productId:guid}")]
-    public async Task<IActionResult> GetProductByIdAsync([FromRoute] Guid productId, [FromQuery] BaseServiceRequest request)
+    public async Task<IActionResult> GetProductByIdAsync([FromRoute] Guid productId,
+        [FromQuery] BaseServiceRequest request)
     {
         var serviceResponse = await _productService.GetProductById(productId);
         if (!serviceResponse.Success)
         {
             return NotFound(serviceResponse.ToDataApiResponse());
         }
-        
+
         return Ok(serviceResponse.ToDataApiResponse());
     }
 
     /// <summary>
-    /// Create a new product in the system
+    ///     Get detailed information about a specific product by its ID using in-memory caching
+    /// </summary>
+    /// <param name="productId">The unique identifier of the product</param>
+    /// <param name="request">Base service request parameters</param>
+    /// <returns>Complete product details from in-memory cache or database if not cached</returns>
+    [Authorize(Roles = Roles.Admin)]
+    [MapToApiVersion(1)]
+    [HttpGet("in-memory/{productId:guid}")]
+    public async Task<IActionResult> GetProductByIdInMemoryCacheAsync([FromRoute] Guid productId,
+        [FromQuery] BaseServiceRequest request)
+    {
+        var serviceResponse = await _productService.GetProductByIdWithInMemoryCache(productId);
+        if (!serviceResponse.Success)
+        {
+            return NotFound(serviceResponse.ToDataApiResponse());
+        }
+
+        return Ok(serviceResponse.ToDataApiResponse());
+    }
+
+    /// <summary>
+    ///     Get detailed information about a specific product by its ID using distributed Redis caching
+    /// </summary>
+    /// <param name="productId">The unique identifier of the product</param>
+    /// <param name="request">Base service request parameters</param>
+    /// <returns>Complete product details from Redis cache or database if not cached</returns>
+    [Authorize(Roles = Roles.Admin)]
+    [MapToApiVersion(1)]
+    [HttpGet("distributed-redis/{productId:guid}")]
+    public async Task<IActionResult> GetProductByIdDistributedRedisCacheAsync([FromRoute] Guid productId,
+        [FromQuery] BaseServiceRequest request)
+    {
+        var serviceResponse = await _productService.GetProductByIdWithDistributedRedisCache(productId);
+        if (!serviceResponse.Success)
+        {
+            return NotFound(serviceResponse.ToDataApiResponse());
+        }
+
+        return Ok(serviceResponse.ToDataApiResponse());
+    }
+
+    /// <summary>
+    ///     Create a new product in the system
     /// </summary>
     /// <param name="request">Product creation details including name, description, price, and category</param>
     /// <returns>Created product ID or validation errors</returns>
@@ -74,7 +117,51 @@ public class ProductsController : ControllerBase
     }
 
     /// <summary>
-    /// Update an existing product's information
+    ///     Update an existing product's information using in-memory caching
+    /// </summary>
+    /// <param name="productId">The unique identifier of the product to update</param>
+    /// <param name="request">Updated product details including name, description, price, and category</param>
+    /// <returns>Success status or validation errors. Cache will be invalidated after update</returns>
+    [Authorize(Roles = Roles.Admin)]
+    [MapToApiVersion(1)]
+    [HttpPut("in-memory/{productId:guid}")]
+    public async Task<IActionResult> UpdateProductInMemoryCacheAsync(Guid productId,
+        [FromBody] UpdateProductRequest request)
+    {
+        var serviceResponse = await _productService.UpdateProductWithInMemoryCache(productId, request);
+
+        if (!serviceResponse.Success)
+        {
+            return BadRequest(serviceResponse.ToBaseApiResponse());
+        }
+
+        return NoContent();
+    }
+
+    /// <summary>
+    ///     Update an existing product's information using distributed Redis caching
+    /// </summary>
+    /// <param name="productId">The unique identifier of the product to update</param>
+    /// <param name="request">Updated product details including name, description, price, and category</param>
+    /// <returns>Success status or validation errors. Redis cache will be invalidated after update</returns>
+    [Authorize(Roles = Roles.Admin)]
+    [MapToApiVersion(1)]
+    [HttpPut("distributed-redis/{productId:guid}")]
+    public async Task<IActionResult> UpdateProductDistributedRedisCacheAsync(Guid productId,
+        [FromBody] UpdateProductRequest request)
+    {
+        var serviceResponse = await _productService.UpdateProductWithDistributedCache(productId, request);
+
+        if (!serviceResponse.Success)
+        {
+            return BadRequest(serviceResponse.ToBaseApiResponse());
+        }
+
+        return NoContent();
+    }
+
+    /// <summary>
+    ///     Update an existing product's information
     /// </summary>
     /// <param name="productId">The unique identifier of the product to update</param>
     /// <param name="request">Updated product details including name, description, price, and category</param>
@@ -85,17 +172,17 @@ public class ProductsController : ControllerBase
     public async Task<IActionResult> UpdateProductAsync(Guid productId, [FromBody] UpdateProductRequest request)
     {
         var serviceResponse = await _productService.UpdateProduct(productId, request);
-        
+
         if (!serviceResponse.Success)
         {
             return BadRequest(serviceResponse.ToBaseApiResponse());
         }
-        
+
         return NoContent();
     }
 
     /// <summary>
-    /// Soft delete a product by setting IsActive to false instead of removing from database
+    ///     Soft delete a product by setting IsActive to false instead of removing from database
     /// </summary>
     /// <param name="productId">The unique identifier of the product to delete</param>
     /// <returns>Success status or not found error</returns>
@@ -105,12 +192,12 @@ public class ProductsController : ControllerBase
     public async Task<IActionResult> DeleteProductAsync(Guid productId)
     {
         var serviceResponse = await _productService.DeleteProduct(productId);
-        
+
         if (!serviceResponse.Success)
         {
             return NotFound(serviceResponse.ToBaseApiResponse());
         }
-        
+
         return NoContent();
     }
 }
