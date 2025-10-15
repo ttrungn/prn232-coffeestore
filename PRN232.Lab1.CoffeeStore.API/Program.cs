@@ -35,6 +35,7 @@ app.UseResponseCompression();
 app.UseExceptionHandler();
 app.UseRouting();
 app.UseCors("AllowLocationHeader");
+app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapGet("/", context =>
