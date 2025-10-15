@@ -3,6 +3,7 @@ using System.Reflection;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Threading.RateLimiting;
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
@@ -129,5 +130,25 @@ public static class DependencyInjection
             });
         });
         services.AddScoped<ApplicationDbContextInitializer>();
+
+        //Rate Limiter
+        var globalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
+        {
+            var clientIp = context.Connection.RemoteIpAddress?.ToString() ?? "anonymous";
+
+            return RateLimitPartition.GetFixedWindowLimiter(clientIp, _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = configuration.GetValue<int>("RateLimiter:PermitLimit"),
+                Window = TimeSpan.FromMinutes(configuration.GetValue<int>("RateLimiter:WindowM")),
+                QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                QueueLimit = configuration.GetValue<int>("RateLimiter:QueueLimit")
+            });
+        });
+
+        services.AddRateLimiter(options =>
+        {
+            options.GlobalLimiter = globalLimiter;
+            options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+        });
     }
 }
