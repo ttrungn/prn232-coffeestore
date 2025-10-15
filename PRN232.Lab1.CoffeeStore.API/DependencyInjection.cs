@@ -1,3 +1,4 @@
+using System.IO.Compression;
 using System.Reflection;
 using System.Text;
 using System.Text.Json;
@@ -5,6 +6,7 @@ using System.Text.Json.Serialization;
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using PRN232.Lab1.CoffeeStore.API.Infrastructure;
@@ -102,6 +104,20 @@ public static class DependencyInjection
                         ?? throw new ArgumentException("JwtSettings:Key is not found")))
                 };
             });
+        services.AddResponseCompression(options =>
+        {
+            options.Providers.Add<BrotliCompressionProvider>();
+            options.Providers.Add<GzipCompressionProvider>();
+            // options.MimeTypes = ["application/json"];
+        });
+        services.Configure<BrotliCompressionProviderOptions>(options =>
+        {
+            options.Level = CompressionLevel.Fastest;
+        });
+        services.Configure<GzipCompressionProviderOptions>(options =>
+        {
+            options.Level = CompressionLevel.SmallestSize;
+        });
         services.AddCors(options =>
         {
             options.AddPolicy("AllowLocationHeader", policy =>
@@ -109,7 +125,7 @@ public static class DependencyInjection
                 policy.AllowAnyOrigin()
                     .AllowAnyMethod()
                     .AllowAnyHeader()
-                    .WithExposedHeaders("Location");
+                    .WithExposedHeaders("Location", "X-Pagination");
             });
         });
         services.AddScoped<ApplicationDbContextInitializer>();

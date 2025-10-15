@@ -31,6 +31,7 @@ if (app.Environment.IsDevelopment())
     await app.InitialiseDatabaseAsync();
 }
 
+app.UseResponseCompression();
 app.UseExceptionHandler();
 app.UseRouting();
 app.UseCors("AllowLocationHeader");
