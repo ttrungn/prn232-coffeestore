@@ -12,7 +12,7 @@ services:
       - "coffee-store-network"
     restart: always
     healthcheck:
-      test: ["CMD", "/opt/mssql-tools18/bin/sqlcmd", "-C", "-S", "localhost", "-U", "sa", "-P", "${SA_PASSWORD:-12345aA#}", "-Q", "SELECT 1", "-b"]
+      test: [ "CMD", "/opt/mssql-tools18/bin/sqlcmd", "-C", "-S", "localhost", "-U", "sa", "-P", "${SA_PASSWORD:-12345aA#}", "-Q", "SELECT 1", "-b" ]
       interval: 10s
       timeout: 3s
       retries: 10
@@ -34,6 +34,14 @@ services:
       bash -c '
       /opt/mssql-tools18/bin/sqlcmd -C -S sqlserver -U sa -P ${SA_PASSWORD:-12345aA#} -d master -i SQLServerInit/init.sql;
       '
+  redis:
+    image: redis
+    container_name: redis
+    ports:
+      - "6379:6379"
+    networks:
+      coffee-store-network:
+    command: [ "redis-server", "--appendonly", "yes" ]
   api:
     build:
       context: .
@@ -54,7 +62,7 @@ services:
         condition: service_healthy
       sqlserver.configurator:
         condition: service_completed_successfully
-        
+
 networks:
   coffee-store-network:
     name: "coffee-store-network"
