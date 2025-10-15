@@ -1,4 +1,3 @@
-using System.Reflection;
 using Asp.Versioning.ApiExplorer;
 using PRN232.Lab1.CoffeeStore.API;
 using PRN232.Lab1.CoffeeStore.API.Utils;
@@ -10,15 +9,6 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDataServices(builder.Configuration);
 builder.Services.AddBusinessServices(builder.Configuration);
 builder.Services.AddApiServices(builder.Configuration);
-
-// Add this before builder.Build()
-var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
-var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
-builder.Services.AddSwaggerGen(c =>
-{
-    c.IncludeXmlComments(xmlPath);
-});
-
 
 var app = builder.Build();
 
@@ -48,7 +38,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapGet("/", context =>
 {
-    context.Response.Redirect("/swagger/index.html", permanent: false);
+    context.Response.Redirect("/swagger/index.html", false);
     return Task.CompletedTask;
 });
 app.MapControllers();
