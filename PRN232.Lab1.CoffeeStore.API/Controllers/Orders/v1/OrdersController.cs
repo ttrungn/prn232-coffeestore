@@ -47,7 +47,10 @@ public class OrdersController : ControllerBase
     public async Task<IActionResult> GetOrderByIdAsync([FromRoute] Guid orderId, [FromQuery] BaseServiceRequest request)
     {
         var serviceResponse = await _orderService.GetOrderById(orderId);
-        
+        if (!serviceResponse.Success)
+        {
+            return NotFound(serviceResponse.ToBaseApiResponse());
+        }
         return Ok(serviceResponse.ToDataApiResponse());
     }
     

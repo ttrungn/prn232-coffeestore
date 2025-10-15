@@ -27,9 +27,11 @@ if (app.Environment.IsDevelopment())
             );
         }
     });
+
     await app.InitialiseDatabaseAsync();
 }
 
+app.UseResponseCompression();
 app.UseExceptionHandler();
 app.UseRouting();
 app.UseCors("AllowLocationHeader");
@@ -37,7 +39,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapGet("/", context =>
 {
-    context.Response.Redirect("/swagger/index.html", permanent: false);
+    context.Response.Redirect("/swagger/index.html", false);
     return Task.CompletedTask;
 });
 app.MapControllers();

@@ -1,28 +1,41 @@
+using System.Linq.Dynamic.Core;
+using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using PRN232.Lab1.CoffeeStore.Repositories.Interfaces;
 using PRN232.Lab1.CoffeeStore.Repositories.Models;
-using PRN232.Lab1.CoffeeStore.Services.Interfaces;
 using PRN232.Lab1.CoffeeStore.Services.Interfaces.Services;
 using PRN232.Lab1.CoffeeStore.Services.Mappers;
 using PRN232.Lab1.CoffeeStore.Services.Models.Requests;
 using PRN232.Lab1.CoffeeStore.Services.Models.Responses;
-using System.Linq.Dynamic.Core;
 
 namespace PRN232.Lab1.CoffeeStore.Services.Services;
 
 public class ProductService : IProductService
 {
+    private static readonly JsonSerializerOptions JsonOptions = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase, WriteIndented = false
+    };
+
+    private readonly IDistributedCache _distributedCache;
     private readonly ILogger<ProductService> _logger;
+    private readonly IMemoryCache _memoryCache;
     private readonly IUnitOfWork _unitOfWork;
 
-    public ProductService(ILogger<ProductService> logger, IUnitOfWork unitOfWork)
+    public ProductService(ILogger<ProductService> logger, IUnitOfWork unitOfWork, IMemoryCache memoryCache,
+        IDistributedCache distributedCache)
     {
         _logger = logger;
         _unitOfWork = unitOfWork;
+        _memoryCache = memoryCache;
+        _distributedCache = distributedCache;
     }
 
-    public async Task<DataServiceResponse<PaginationServiceResponse<ProductResponse>>> GetProducts(GetProductsRequest request)
+    public async Task<DataServiceResponse<PaginationServiceResponse<ProductResponse>>> GetProducts(
+        GetProductsRequest request)
     {
         var productRepository = _unitOfWork.GetRepository<Product, Guid>();
         var query = productRepository.Query()
@@ -31,8 +44,10 @@ public class ProductService : IProductService
             .AsNoTracking();
 
         if (!string.IsNullOrWhiteSpace(request.Name))
+        {
             query = query.Where(p => p.Name.Contains(request.Name));
-        
+        }
+
         var totalProducts = await query.CountAsync();
         var productResponses = await query
             .OrderBy(p => p.Name)
@@ -41,7 +56,7 @@ public class ProductService : IProductService
             .Select(p => p.ToProductResponse())
             .ToListAsync();
 
-        var paginationResponse = new PaginationServiceResponse<ProductResponse>()
+        var paginationResponse = new PaginationServiceResponse<ProductResponse>
         {
             TotalResults = totalProducts,
             TotalCurrentResults = productResponses.Count,
@@ -49,12 +64,10 @@ public class ProductService : IProductService
             PageSize = request.PageSize,
             Results = productResponses
         };
-        
-        return new DataServiceResponse<PaginationServiceResponse<ProductResponse>>()
+
+        return new DataServiceResponse<PaginationServiceResponse<ProductResponse>>
         {
-            Success = true,
-            Message = "Get products successfully",
-            Data = paginationResponse,
+            Success = true, Message = "Get products successfully", Data = paginationResponse
         };
     }
 
@@ -70,19 +83,15 @@ public class ProductService : IProductService
 
         if (productResponse == null)
         {
-            return new DataServiceResponse<ProductResponse?>()
+            return new DataServiceResponse<ProductResponse?>
             {
-                Success = false,
-                Message = $"Product with id {productId} not found",
-                Data = null,
+                Success = false, Message = $"Product with id {productId} not found", Data = null
             };
         }
-        
-        return new DataServiceResponse<ProductResponse?>()
+
+        return new DataServiceResponse<ProductResponse?>
         {
-            Success = true,
-            Message = "Get product successfully",
-            Data = productResponse,
+            Success = true, Message = "Get product successfully", Data = productResponse
         };
     }
 
@@ -97,11 +106,9 @@ public class ProductService : IProductService
 
         if (!categoryExists)
         {
-            return new DataServiceResponse<Guid>()
+            return new DataServiceResponse<Guid>
             {
-                Success = false,
-                Message = $"Category with id {request.CategoryId} not found",
-                Data = Guid.Empty
+                Success = false, Message = $"Category with id {request.CategoryId} not found", Data = Guid.Empty
             };
         }
 
@@ -110,11 +117,9 @@ public class ProductService : IProductService
         await productRepository.AddAsync(product);
         await _unitOfWork.SaveChangesAsync();
 
-        return new DataServiceResponse<Guid>()
+        return new DataServiceResponse<Guid>
         {
-            Success = true,
-            Message = "Product created successfully",
-            Data = product.Id
+            Success = true, Message = "Product created successfully", Data = product.Id
         };
     }
 
@@ -129,11 +134,7 @@ public class ProductService : IProductService
 
         if (product == null)
         {
-            return new BaseServiceResponse()
-            {
-                Success = false,
-                Message = $"Product with id {productId} not found"
-            };
+            return new BaseServiceResponse { Success = false, Message = $"Product with id {productId} not found" };
         }
 
         // Check if category exists
@@ -142,10 +143,9 @@ public class ProductService : IProductService
 
         if (!categoryExists)
         {
-            return new BaseServiceResponse()
+            return new BaseServiceResponse
             {
-                Success = false,
-                Message = $"Category with id {request.CategoryId} not found"
+                Success = false, Message = $"Category with id {request.CategoryId} not found"
             };
         }
 
@@ -154,11 +154,7 @@ public class ProductService : IProductService
         await productRepository.UpdateAsync(product);
         await _unitOfWork.SaveChangesAsync();
 
-        return new BaseServiceResponse()
-        {
-            Success = true,
-            Message = "Product updated successfully"
-        };
+        return new BaseServiceResponse { Success = true, Message = "Product updated successfully" };
     }
 
     public async Task<BaseServiceResponse> DeleteProduct(Guid productId)
@@ -171,37 +167,30 @@ public class ProductService : IProductService
 
         if (product == null)
         {
-            return new BaseServiceResponse()
-            {
-                Success = false,
-                Message = $"Product with id {productId} not found"
-            };
+            return new BaseServiceResponse { Success = false, Message = $"Product with id {productId} not found" };
         }
 
         // Soft delete by setting IsActive to false
         product.IsActive = false;
         product.DeletedAt = DateTime.UtcNow;
-        
+
         await productRepository.UpdateAsync(product);
         await _unitOfWork.SaveChangesAsync();
 
-        return new BaseServiceResponse()
-        {
-            Success = true,
-            Message = "Product deleted successfully"
-        };
+        return new BaseServiceResponse { Success = true, Message = "Product deleted successfully" };
     }
 
-    public async Task<DataServiceResponse<PaginationServiceResponse<object?>>> GetProducts(GetProductsRequestV2 requestV2)
+    public async Task<DataServiceResponse<PaginationServiceResponse<object?>>> GetProducts(
+        GetProductsRequestV2 requestV2)
     {
         var productRepository = _unitOfWork.GetRepository<Product, Guid>();
         var query = productRepository.Query()
             .Include(p => p.Category)
-                .Where(p => p.Category != null && p.Category.IsActive)
+            .Where(p => p.Category != null && p.Category.IsActive)
             .AsNoTracking();
 
         var config = new ParsingConfig { IsCaseSensitive = false };
-        
+
         var entityProps = typeof(Product).GetProperties()
             .Select(p => p.Name)
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
@@ -212,7 +201,7 @@ public class ProductService : IProductService
             var sortFields = requestV2.Sort.Split(',', StringSplitOptions.TrimEntries);
 
             var invalidSorts = sortFields
-                .Select(sf => sf.StartsWith($"-") ? sf[1..] : sf)
+                .Select(sf => sf.StartsWith("-") ? sf[1..] : sf)
                 .Where(sf => !entityProps.Contains(sf))
                 .ToList();
             if (invalidSorts.Count != 0)
@@ -221,7 +210,7 @@ public class ProductService : IProductService
                 {
                     Success = false,
                     Message = $"Invalid select fields: {string.Join(", ", invalidSorts)}",
-                    Data = new PaginationServiceResponse<object?> { }
+                    Data = new PaginationServiceResponse<object?>()
                 };
             }
         }
@@ -240,7 +229,7 @@ public class ProductService : IProductService
                 {
                     Success = false,
                     Message = $"Invalid select fields: {string.Join(", ", invalidSelects)}",
-                    Data = new PaginationServiceResponse<object?> { }
+                    Data = new PaginationServiceResponse<object?>()
                 };
             }
         }
@@ -257,17 +246,16 @@ public class ProductService : IProductService
 
             var validSorts = sortFields.Select(f =>
             {
-                bool desc = f.StartsWith($"-");
-                string prop = desc ? f[1..] : f;
+                var desc = f.StartsWith("-");
+                var prop = desc ? f[1..] : f;
                 var realProp = entityProps.FirstOrDefault(p =>
-                   string.Equals(p, prop, StringComparison.OrdinalIgnoreCase))
-                   ?? throw new Exception($"Invalid sort field: {prop}");
+                                   string.Equals(p, prop, StringComparison.OrdinalIgnoreCase))
+                               ?? throw new Exception($"Invalid sort field: {prop}");
 
                 return desc ? $"{realProp} descending" : $"{realProp} ascending";
             });
 
             query = query.OrderBy(config, string.Join(",", validSorts)).ThenBy(p => p.Id);
-
         }
         else
         {
@@ -301,9 +289,7 @@ public class ProductService : IProductService
                     Price = p.Price,
                     Category = new CategoryResponse
                     {
-                        CategoryId = p.CategoryId,
-                        Name = p.Name,
-                        Description = p.Description,
+                        CategoryId = p.CategoryId, Name = p.Name, Description = p.Description
                     }
                 })
                 .ToListAsync();
@@ -318,13 +304,197 @@ public class ProductService : IProductService
             Data = new PaginationServiceResponse<object?>
             {
                 TotalCurrentResults = result.Count, // number of items in this page
-               
+
                 Page = requestV2.Page,
                 PageSize = requestV2.PageSize,
                 TotalResults = totalCount,
                 Results = result!
             }
         };
+    }
 
+    public async Task<DataServiceResponse<ProductResponse?>> GetProductByIdWithInMemoryCache(Guid productId)
+    {
+        if (_memoryCache.TryGetValue($"product:{productId}", out ProductResponse? cacheValue))
+        {
+            return new DataServiceResponse<ProductResponse?>
+            {
+                Success = true, Message = "Get product successfully", Data = cacheValue
+            };
+        }
+
+        var productRepository = _unitOfWork.GetRepository<Product, Guid>();
+        var productResponse = await productRepository.Query()
+            .Where(p => p.IsActive)
+            .Include(p => p.Category)
+            .Where(p => p.Id == productId)
+            .Select(p => p.ToProductResponse())
+            .FirstOrDefaultAsync();
+
+        if (productResponse == null)
+        {
+            return new DataServiceResponse<ProductResponse?>
+            {
+                Success = false, Message = $"Product with id {productId} not found", Data = null
+            };
+        }
+
+        cacheValue = productResponse;
+        var baseTtl = TimeSpan.FromMinutes(1);
+        var jitterSec = Random.Shared.Next(0, 30);
+        var effectiveTtl = baseTtl + TimeSpan.FromSeconds(jitterSec);
+        var cacheEntryOptions = new MemoryCacheEntryOptions()
+            .SetAbsoluteExpiration(effectiveTtl);
+
+        _memoryCache.Set($"product:{productId}", cacheValue, cacheEntryOptions);
+
+
+        return new DataServiceResponse<ProductResponse?>
+        {
+            Success = true, Message = "Get product successfully", Data = productResponse
+        };
+    }
+
+
+    public async Task<DataServiceResponse<ProductResponse?>> GetProductByIdWithDistributedRedisCache(Guid productId)
+    {
+        var cacheKey = $"product:{productId}";
+
+        // 1) Try cache first
+        var cached = await _distributedCache.GetStringAsync(cacheKey);
+        if (!string.IsNullOrEmpty(cached))
+        {
+            var fromCache = JsonSerializer.Deserialize<ProductResponse>(cached, JsonOptions);
+            if (fromCache != null)
+            {
+                return new DataServiceResponse<ProductResponse?>
+                {
+                    Success = true, Message = "Get product successfully (from Redis cache)", Data = fromCache
+                };
+            }
+        }
+
+        // 2) Fallback to DB
+        var productRepository = _unitOfWork.GetRepository<Product, Guid>();
+        var productResponse = await productRepository.Query()
+            .Where(p => p.IsActive)
+            .Include(p => p.Category)
+            .Where(p => p.Id == productId)
+            .Select(p => p.ToProductResponse())
+            .FirstOrDefaultAsync();
+
+        if (productResponse == null)
+        {
+            return new DataServiceResponse<ProductResponse?>
+            {
+                Success = false, Message = $"Product with id {productId} not found", Data = null
+            };
+        }
+
+        // 3) Put into cache with TTL (+ jitter to avoid stampedes)
+        var baseTtl = TimeSpan.FromMinutes(1);
+        var jitterSec = Random.Shared.Next(0, 30); // 0..30s extra
+        var effectiveTtl = baseTtl + TimeSpan.FromSeconds(jitterSec);
+
+        var options = new DistributedCacheEntryOptions { AbsoluteExpirationRelativeToNow = effectiveTtl };
+
+        var serialized = JsonSerializer.Serialize(productResponse, JsonOptions);
+        await _distributedCache.SetStringAsync(cacheKey, serialized, options);
+
+        return new DataServiceResponse<ProductResponse?>
+        {
+            Success = true, Message = "Get product successfully", Data = productResponse
+        };
+    }
+
+    // In-Memory cache version
+    public async Task<BaseServiceResponse> UpdateProductWithInMemoryCache(Guid productId, UpdateProductRequest request)
+    {
+        var productRepository = _unitOfWork.GetRepository<Product, Guid>();
+        var categoryRepository = _unitOfWork.GetRepository<Category, Guid>();
+
+        // 1) Tồn tại product?
+        var product = await productRepository.Query()
+            .FirstOrDefaultAsync(p => p.Id == productId && p.IsActive);
+
+        if (product == null)
+        {
+            return new BaseServiceResponse { Success = false, Message = $"Product with id {productId} not found" };
+        }
+
+        // 2) Tồn tại category?
+        var categoryExists = await categoryRepository.Query()
+            .AnyAsync(c => c.Id == request.CategoryId);
+
+        if (!categoryExists)
+        {
+            return new BaseServiceResponse
+            {
+                Success = false, Message = $"Category with id {request.CategoryId} not found"
+            };
+        }
+
+        // 3) Cập nhật DB
+        product.UpdateProduct(request);
+        await productRepository.UpdateAsync(product);
+        await _unitOfWork.SaveChangesAsync();
+
+        // 4) Write-Around (khuyến nghị với cache-aside): xóa cache để lần GET sau tự nạp lại
+        var cacheKey = $"product:{productId}";
+        _memoryCache.Remove(cacheKey);
+
+        // Nếu muốn Write-Through thay vì xóa cache (không cần lần GET sau hit DB):
+        // var updatedDto = product.ToProductResponse();
+        // _memoryCache.Set(cacheKey, updatedDto, new MemoryCacheEntryOptions()
+        //     .SetSlidingExpiration(TimeSpan.FromMinutes(5)));
+
+        return new BaseServiceResponse { Success = true, Message = "Product updated successfully" };
+    }
+
+    public async Task<BaseServiceResponse> UpdateProductWithDistributedCache(Guid productId,
+        UpdateProductRequest request)
+    {
+        var productRepository = _unitOfWork.GetRepository<Product, Guid>();
+        var categoryRepository = _unitOfWork.GetRepository<Category, Guid>();
+
+        var product = await productRepository.Query()
+            .FirstOrDefaultAsync(p => p.Id == productId && p.IsActive);
+
+        if (product == null)
+        {
+            return new BaseServiceResponse { Success = false, Message = $"Product with id {productId} not found" };
+        }
+
+        var categoryExists = await categoryRepository.Query()
+            .AnyAsync(c => c.Id == request.CategoryId);
+
+        if (!categoryExists)
+        {
+            return new BaseServiceResponse
+            {
+                Success = false, Message = $"Category with id {request.CategoryId} not found"
+            };
+        }
+
+        product.UpdateProduct(request);
+        await productRepository.UpdateAsync(product);
+        await _unitOfWork.SaveChangesAsync();
+
+        var cacheKey = $"product:{productId}";
+
+        // Write-Around (khuyến nghị): xóa cache Redis
+        await _distributedCache.RemoveAsync(cacheKey);
+
+        // Nếu muốn Write-Through:
+        // var updatedDto = product.ToProductResponse();
+        // var json = JsonSerializer.Serialize(updatedDto, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+        // var options = new DistributedCacheEntryOptions
+        // {
+        //     AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5)
+        //     // hoặc SlidingExpiration = TimeSpan.FromMinutes(2)
+        // };
+        // await _distributedCache.SetStringAsync(cacheKey, json, options);
+
+        return new BaseServiceResponse { Success = true, Message = "Product updated successfully" };
     }
 }

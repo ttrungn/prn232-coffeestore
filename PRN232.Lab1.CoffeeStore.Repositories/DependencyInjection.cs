@@ -1,10 +1,7 @@
-using System.Text;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.IdentityModel.Tokens;
 using PRN232.Lab1.CoffeeStore.Repositories.Interfaces;
 using PRN232.Lab1.CoffeeStore.Repositories.Models;
 using PRN232.Lab1.CoffeeStore.Repositories.Repositories;
@@ -16,7 +13,14 @@ public static class DependencyInjection
     public static void AddDataServices(this IServiceCollection services, IConfiguration configuration)
     {
         var connectionString = configuration.GetConnectionString("DefaultConnection");
+        var redisConnectionString = configuration.GetConnectionString("RedisConnection");
         services.AddDbContext<CoffeeStoreDbContext>(options => options.UseSqlServer(connectionString));
+        services.AddStackExchangeRedisCache(options =>
+        {
+            options.Configuration = redisConnectionString;
+            options.InstanceName = "CoffeeStore_";
+        });
+        services.AddMemoryCache();
         services.AddIdentityCore<User>(options =>
             {
                 options.Password.RequireDigit = true;
@@ -30,7 +34,7 @@ public static class DependencyInjection
             .AddRoles<IdentityRole>()
             .AddDefaultTokenProviders()
             .AddEntityFrameworkStores<CoffeeStoreDbContext>();
-        
+
         services.AddScoped(typeof(IGenericRepository<,>), typeof(GenericRepository<,>));
         services.AddScoped<IUnitOfWork, UnitOfWork>();
     }
