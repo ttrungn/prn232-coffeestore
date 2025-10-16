@@ -5,7 +5,7 @@ namespace PRN232.Lab1.CoffeeStore.Services.Models.Requests;
 public class CreateProductRequest : BaseServiceRequest
 {
     [Required]
-    [StringLength(100)]
+    [StringLength(100, MinimumLength = 2)]
     public string Name { get; set; } = null!;
 
     [Required]

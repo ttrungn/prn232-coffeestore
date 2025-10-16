@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 
 namespace PRN232.Lab1.CoffeeStore.Services.Models.Requests;
@@ -6,6 +7,7 @@ public class CreateOrderRequest : BaseServiceRequest
 {
     [JsonIgnore] 
     public string? UserId { get; set; }
+    [MinLength(1, ErrorMessage = "Order must contain at least 1 item")]
     private List<OrderItemRequest> _orderItems = [];
 
     public List<OrderItemRequest> OrderItems
@@ -33,6 +35,8 @@ public class CreateOrderRequest : BaseServiceRequest
 
 public class OrderItemRequest
 {
+    [Required]
     public Guid ProductId { get; set; }
+    [Range(1, int.MaxValue, ErrorMessage = "Quantity must be at least 1")]
     public int Quantity { get; set; }
 }

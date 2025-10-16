@@ -1,3 +1,4 @@
+using Ganss.Xss;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using PRN232.Lab1.CoffeeStore.Services.Interfaces;
@@ -22,5 +23,22 @@ public static class DependencyInjection
         services.AddScoped<IVnPayService, VnPayService>();
         services.AddScoped<ITokenService, TokenService>();
         services.AddScoped<IAuthService, AuthService>();
+        // services.AddSingleton<IHtmlSanitizer, HtmlSanitizer>();
+        services.AddSingleton<IHtmlSanitizer>(_ =>
+        {
+            var s = new HtmlSanitizer();
+            //
+            // s.AllowedTags.Add("p"); s.AllowedTags.Add("br");
+            // s.AllowedTags.Add("ul"); s.AllowedTags.Add("ol"); s.AllowedTags.Add("li");
+            // s.AllowedTags.Add("strong"); s.AllowedTags.Add("em");
+            // s.AllowedAttributes.Add("href");
+            // s.AllowedSchemes.Clear();
+            // s.AllowedSchemes.Add("http"); s.AllowedSchemes.Add("https"); s.AllowedSchemes.Add("mailto");
+            //
+            s.KeepChildNodes = true;
+        
+            return s;
+        });
+
     }
 }

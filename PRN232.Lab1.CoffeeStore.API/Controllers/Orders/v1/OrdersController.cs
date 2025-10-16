@@ -64,6 +64,8 @@ public class OrdersController : ControllerBase
     [HttpPost("")]
     public async Task<IActionResult> CreateOrderAsync([FromBody] CreateOrderRequest request)
     {
+        if (!ModelState.IsValid) return ValidationProblem(ModelState);
+        
         request.UserId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? throw new Exception("User not found");
         var serviceResponse = await _orderService.CreateOrder(request);
         

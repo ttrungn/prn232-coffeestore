@@ -106,6 +106,7 @@ public class ProductsController : ControllerBase
     [HttpPost("")]
     public async Task<IActionResult> CreateProductAsync([FromBody] CreateProductRequest request)
     {
+        if (!ModelState.IsValid) return ValidationProblem(ModelState);
         var serviceResponse = await _productService.CreateProduct(request);
 
         if (!serviceResponse.Success)
