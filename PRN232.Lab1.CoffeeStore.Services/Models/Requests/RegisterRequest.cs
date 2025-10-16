@@ -9,6 +9,11 @@ public class RegisterRequest : BaseServiceRequest
     public string Email { get; set; } = null!;
     
     [Required]
+    [StringLength(50)]
+    [RegularExpression(@"^[a-zA-Z0-9_]+$", ErrorMessage = "Username chỉ được chứa ký tự và số")]
+    public string Username { get; set; }
+    
+    [Required]
     [MinLength(6)]
     public string Password { get; set; } = null!;
     

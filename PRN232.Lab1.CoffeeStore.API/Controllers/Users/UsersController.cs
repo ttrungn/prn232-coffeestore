@@ -54,6 +54,8 @@ public class UsersController : ControllerBase
     [HttpPost("customer/signup")]
     public async Task<IActionResult> SignUp([FromBody] RegisterRequest request)
     {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
         _logger.LogInformation("Registration attempt for email: {Email}", request.Email);
 
         var serviceResponse = await _authService.Register(request, Roles.Customer);
