@@ -10,8 +10,8 @@ public class CreateProductRequest : BaseServiceRequest
 
     [Required]
     [Range(0, double.MaxValue, ErrorMessage = "Price must be >= 0.")]
-    public decimal Price { get; set; }
-    
+    public decimal? Price { get; set; }
+
     [Required]
     [StringLength(500)]
     public string Description { get; set; } = null!;

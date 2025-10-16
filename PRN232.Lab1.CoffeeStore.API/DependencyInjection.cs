@@ -132,7 +132,6 @@ public static class DependencyInjection
         });
         services.AddScoped<ApplicationDbContextInitializer>();
 
-        
         //Rate Limiter
         var globalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
         {
@@ -150,6 +149,16 @@ public static class DependencyInjection
         services.AddRateLimiter(options =>
         {
             options.GlobalLimiter = globalLimiter;
+            options.AddPolicy("auth-fixed", context =>
+                RateLimitPartition.GetFixedWindowLimiter(
+                    context.Connection.RemoteIpAddress?.ToString() ?? "anonymous",
+                    _ => new FixedWindowRateLimiterOptions
+                    {
+                        PermitLimit = configuration.GetValue<int>("RateLimiterLogin:PermitLimit"),
+                        Window = TimeSpan.FromMinutes(configuration.GetValue<int>("RateLimiterLogin:WindowM")),
+                        QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                        QueueLimit = configuration.GetValue<int>("RateLimiterLogin:QueueLimit")
+                    }));
             options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
         });
     }

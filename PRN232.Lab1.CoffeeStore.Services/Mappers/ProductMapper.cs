@@ -24,7 +24,7 @@ public static class ProductMapper
         {
             Id = Guid.NewGuid(),
             Name = request.Name,
-            Price = request.Price,
+            Price = (decimal)request.Price!,
             Description = cleanDesc,
             CategoryId = request.CategoryId,
             IsActive = true
@@ -34,7 +34,7 @@ public static class ProductMapper
     public static void UpdateProduct(this Product product, UpdateProductRequest request)
     {
         product.Name = request.Name;
-        product.Price = request.Price;
+        product.Price = (decimal)request.Price!;
         product.Description = request.Description;
         product.CategoryId = request.CategoryId;
     }

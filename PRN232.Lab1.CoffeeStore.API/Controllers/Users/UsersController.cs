@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using PRN232.Lab1.CoffeeStore.API.Mappers;
 using PRN232.Lab1.CoffeeStore.Repositories.Constants;
 using PRN232.Lab1.CoffeeStore.Services.Interfaces.Services;
@@ -30,12 +31,13 @@ public class UsersController : ControllerBase
     /// <param name="request">Login credentials</param>
     /// <returns>JWT tokens if login successful</returns>
     [HttpPost("login")]
+    [EnableRateLimiting("auth-fixed")]
     public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {
         _logger.LogInformation("Login attempt for email: {Email}", request.Email);
 
         var serviceResponse = await _authService.Login(request);
-        
+
         if (!serviceResponse.Success)
         {
             return Unauthorized(serviceResponse.ToBaseApiResponse());
@@ -57,7 +59,7 @@ public class UsersController : ControllerBase
         _logger.LogInformation("Registration attempt for email: {Email}", request.Email);
 
         var serviceResponse = await _authService.Register(request, Roles.Customer);
-        
+
         if (!serviceResponse.Success)
         {
             return BadRequest(serviceResponse.ToBaseApiResponse());
@@ -77,7 +79,7 @@ public class UsersController : ControllerBase
         _logger.LogInformation("Token refresh attempt");
 
         var serviceResponse = await _tokenService.RefreshTokens(request);
-        
+
         if (!serviceResponse.Success)
         {
             return Unauthorized(serviceResponse.ToBaseApiResponse());
@@ -97,7 +99,7 @@ public class UsersController : ControllerBase
         _logger.LogInformation("Token revocation attempt");
 
         var serviceResponse = await _tokenService.RevokeToken(request);
-        
+
         if (!serviceResponse.Success)
         {
             return Unauthorized(serviceResponse.ToBaseApiResponse());
